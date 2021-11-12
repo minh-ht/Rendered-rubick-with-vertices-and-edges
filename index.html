@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+
+    <script id="vertex-shader" type="x-shader/x-vertex">
+        #version 300 es
+
+        in vec3 aPosition;
+        in vec3 aColor;
+
+        out vec4 vColor;
+
+        uniform vec3 uUserCoordinates;
+        uniform mat4 uModelViewMatrix;
+        uniform mat4 uProjectionMatrix;
+
+        uniform int uDrawStatus;
+        uniform vec3 uTheta;
+
+        vec3 convertCoordinates(vec3 vPosition) {
+            return vPosition / uUserCoordinates;
+        }
+
+        vec3 rotate(vec3 aPosition) {
+            vec3 angles = radians(uTheta);
+
+            mat4 rotate_x = transpose(mat4(
+                1.0, 0.0, 0.0, 0.0,
+		        0.0, cos(angles[0]), -sin(angles[0]), 0.0,
+		        0.0, sin(angles[0]), cos(angles[0]), 0.0,
+                0.0, 0.0,  0.0, 1.0));
+
+            mat4 rotate_y = transpose(mat4(
+                cos(angles[1]), 0.0,  sin(angles[1]), 0.0,
+                0.0, 1.0, 0.0, 0.0,
+                -sin(angles[1]), 0.0, cos(angles[1]), 0.0,
+                0.0, 0.0,  0.0, 1.0));
+            
+            mat4 rotate_z = transpose(mat4(
+                cos(angles[2]), -sin(angles[2]),  0.0, 0.0,
+                sin(angles[2]), cos(angles[2]), 0.0, 0.0,
+                0.0, 0.0, 1.0, 0.0,
+                0.0, 0.0,  0.0, 1.0));
+
+            vec4 vPosition = vec4(aPosition, 1.0);
+
+            vec4 newPosition = rotate_z * rotate_y * rotate_x * vPosition; 
+
+            return vec3(newPosition.x, newPosition.y, newPosition.z);
+        }
+
+        void main() {
+            if (uDrawStatus == 1)
+                gl_Position = uProjectionMatrix * uModelViewMatrix * vec4(convertCoordinates(rotate(aPosition)), 1.0);
+            else
+                gl_Position = uProjectionMatrix * uModelViewMatrix * vec4(convertCoordinates(aPosition), 1.0);
+            vColor = vec4(aColor, 1.0);
+        }
+    </script>
+
+    <script id="fragment-shader" type="x-shader/x-fragment">
+        #version 300 es
+
+        precision mediump float;
+
+        in vec4 vColor;
+        out vec4 fColor;
+
+        void main() {
+            fColor = vColor;
+        }
+    </script>
+
+    <script type="text/javascript" src="Common/initShaders.js"></script>
+    <script type="text/javascript" src="Common/MVnew.js"></script>
+    <script type="text/javascript" src="tlu.js"></script>
+
+    <body style="background-image: url(https://i.redd.it/dt6jcm2d0yh41.png);">
+        <div>
+            Invert X-axis: <input id="invertXaxis" type="checkbox">
+            <span style="white-space: pre;">        </span>
+            X-axis sensivity: <input id="X-sensivity" type="range" min="0.001" max="0.01" value="0.005" step="0.001">
+            <span style="white-space: pre;">        </span>
+            Zoom speed: <input id="zoom-slider" type="range" min="0.01" max="0.1" value="0.05" step="0.005">
+        </br>
+            Invert-Y axis: <input id="invertYaxis" type="checkbox">
+            <span style="white-space: pre;">        </span>
+            Y-axis sensivity: <input id="Y-sensivity" type="range" min="0.001" max="0.01" value="0.005" step="0.001">
+            <span style="white-space: pre;">        </span>
+            <span id="eyeValue" style="display: inline-block; width: 200px;">eye(0, 0, 1)</span>
+            <span id="radiusValue">radius: 1.0</span>
+        </div>
+        <p style="display: inline-block; padding-left: 50px; padding-right: 80px;">Click and drag to move camera</p>
+        <span style="white-space: pre;">(A D) to rotate Y-axis;    (S W) to rotate X-axis;    (Q E) to rotate Z-axis;</span>
+        </br>
+        <canvas id="gl-canvas" width="800" height="800">
+            Oops ... your browser doesn't support the HTML5 canvas element
+        </canvas>
+    </body>
+</html>
